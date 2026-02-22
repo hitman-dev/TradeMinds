@@ -19,6 +19,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _get_token() -> str:
+    """
+    Token resolution order:
+      1. Streamlit Cloud secrets  (GROWW_API_TOKEN in the Secrets Manager)
+      2. Local .env file          (for development)
+    """
+    # Try Streamlit secrets first (only available when running on Streamlit Cloud)
+    try:
+        import streamlit as st
+        token = st.secrets.get("GROWW_API_TOKEN", "")
+        if token:
+            return token
+    except Exception:
+        pass
+    # Fallback: local .env / environment variable
+    return os.getenv("GROWW_API_TOKEN", "")
+
 # Interval label → interval_in_minutes value for the API
 INTERVAL_MINUTES = {
     "1min":   1,
@@ -44,10 +62,12 @@ MAX_DAYS_PER_CALL = {
 
 class GrowwDataFetcher:
     def __init__(self, token: str = None):
-        self.token = token or os.getenv("GROWW_API_TOKEN")
+        self.token = token or _get_token()
         if not self.token or self.token == "your_token_here":
             raise ValueError(
-                "GROWW_API_TOKEN not set. Please add it to your .env file."
+                "GROWW_API_TOKEN not set.\n"
+                "• Local dev : add it to your .env file\n"
+                "• Streamlit Cloud : App Settings → Secrets → add GROWW_API_TOKEN = \"...\""
             )
         from growwapi import GrowwAPI
         self.client = GrowwAPI(self.token)
