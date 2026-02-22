@@ -1,0 +1,6 @@
+growwapi
+streamlit
+pandas
+numpy
+plotly
+python-dotenv
